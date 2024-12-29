@@ -1,11 +1,7 @@
 import streamlit as st
-import sounddevice as sd
-import numpy as np
 from openai import OpenAI
 from gtts import gTTS
 import os
-from scipy.io.wavfile import write
-import tempfile
 from dotenv import load_dotenv
 import time
 from io import BytesIO
@@ -22,30 +18,13 @@ class AIAssistant:
     def set_context(self, context):
         self.context = context
 
-    def record_audio(self):
+    def transcribe_audio(self, audio_file):
         try:
-            st.write("🎙️ Recording... Speak now!")
-            duration = 5
-            sample_rate = 44100
-            recording = sd.rec(int(duration * sample_rate), 
-                             samplerate=sample_rate, channels=1)
-            sd.wait()
-            return recording, sample_rate
-        except Exception as e:
-            st.error(f"Recording error: {str(e)}")
-            return None, None
-
-    def transcribe_audio(self, audio_data, sample_rate):
-        try:
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
-                write(temp_audio.name, sample_rate, audio_data)
-                with open(temp_audio.name, "rb") as audio_file:
-                    transcript = client.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file
-                    )
-                os.unlink(temp_audio.name)
-                return transcript.text
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
+            return transcript.text
         except Exception as e:
             st.error(f"Transcription error: {str(e)}")
             return None
@@ -123,27 +102,43 @@ def main():
     
     with col1:
         st.subheader("💬 Conversation")
-        # Record button
-        if st.button("🎤 Start Recording"):
-            audio_data, sample_rate = st.session_state.ai.record_audio()
-            
-            if audio_data is not None:
-                with st.spinner("Transcribing..."):
-                    transcript = st.session_state.ai.transcribe_audio(audio_data, sample_rate)
-                    
+        
+        # Using Streamlit's audio recorder
+        audio_bytes = st.audio_recorder()
+        
+        if audio_bytes:
+            # Save audio to a temporary file
+            with st.spinner("Processing audio..."):
+                # Create a BytesIO object
+                audio_file = BytesIO(audio_bytes)
+                audio_file.name = "recording.wav"  # Add a name attribute
+                
+                # Transcribe audio
+                transcript = st.session_state.ai.transcribe_audio(audio_file)
+                
                 if transcript:
                     st.info(f"You said: {transcript}")
                     
-                    with st.spinner("Getting AI response..."):
-                        ai_response = st.session_state.ai.get_ai_response(transcript)
+                    # Get AI response
+                    ai_response = st.session_state.ai.get_ai_response(transcript)
                     
                     if ai_response:
                         st.success(f"AI Response: {ai_response}")
                         
-                        with st.spinner("Converting to speech..."):
-                            audio_fp = st.session_state.ai.text_to_speech(ai_response)
-                            if audio_fp:
-                                st.audio(audio_fp)
+                        # Convert to speech
+                        audio_fp = st.session_state.ai.text_to_speech(ai_response)
+                        if audio_fp:
+                            st.audio(audio_fp)
+        
+        # Optional: Add text input as a fallback
+        text_input = st.text_input("Or type your message here:")
+        if text_input:
+            ai_response = st.session_state.ai.get_ai_response(text_input)
+            if ai_response:
+                st.success(f"AI Response: {ai_response}")
+                audio_fp = st.session_state.ai.text_to_speech(ai_response)
+                if audio_fp:
+                    st.audio(audio_fp)
     
     with col2:
         st.subheader("📝 Conversation History")

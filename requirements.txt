@@ -1,7 +1,4 @@
 streamlit
 openai
 python-dotenv
-sounddevice
-scipy
 gtts
-numpy
