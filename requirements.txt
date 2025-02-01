@@ -3,5 +3,6 @@ openai
 python-dotenv
 sounddevice
 scipy
-gtts
-numpy
+gTTS
+pytest
+python-dotenv
