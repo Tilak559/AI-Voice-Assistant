@@ -1,3 +1,9 @@
-/.env
-/.venv
-/app1.py
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+*.wav
+.DS_Store
+.venv/
