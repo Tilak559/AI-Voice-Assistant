@@ -6,4 +6,4 @@ __pycache__/
 htmlcov/
 *.wav
 .DS_Store
-.venv/
+.venv
