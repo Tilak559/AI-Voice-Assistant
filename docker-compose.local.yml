@@ -1,0 +1,14 @@
+# docker-compose.local.yml
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile  # Your local Dockerfile (if different from production)
+    image: local/streamlit-app:latest
+    ports:
+      - "8501:8501"  # Maps container port 8501 to host port 8501
+    environment:
+      - ENV=development
+    volumes:
+      - .:/app  # Optional: mount the code for live reloading
